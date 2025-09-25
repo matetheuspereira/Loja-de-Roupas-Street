@@ -1,0 +1,487 @@
+:root {
+  /* Fundo e cores gerais */
+  --bg-color: #111111;               /* fundo principal escuro */
+  --text-color: #ffffff;             /* texto principal */
+  --text-secondary: #cccccc;         /* texto secundário */
+  --border-color: #2a2a2a;           /* bordas escuras */
+  --header-footer-bg: #000000;       /* header/footer escuro */
+  --card-bg: #1a1a1a;                /* fundo do card levemente mais claro */
+  --logo-accent: #e50914;            /* cor da logo */
+
+  /* Botões do card */
+  --card-button-bg: #000000;         /* fundo preto */
+  --card-button-text: #ffffff;       /* texto branco */
+  --card-button-hover-bg: #ffffff;   /* hover branco */
+  --card-button-hover-text: #000000; /* texto invertido no hover */
+
+  /* Botão do banner */
+  --banner-button-bg: #000000;         /* fundo do botão preto */
+  --banner-button-text: #ffffff;       /* texto branco */
+  --banner-button-hover-bg: #ffffff;   /* hover branco */
+  --banner-button-hover-text: #000000; /* texto invertido no hover */
+
+
+  /* Navegação */
+  --nav-link-color: #ffffff;       /* links brancos */
+  --nav-link-hover: #e50914;       /* hover vermelho */
+
+  /* Carrinho */
+  --carrinho-bg: #000000;          /* fundo preto */
+  --carrinho-text: #ffffff;        /* texto branco */
+  --carrinho-hover-bg: #ffffff;    /* hover branco */
+  --carrinho-hover-text: #000000;  /* texto invertido */
+
+  /* Banner overlay*/
+  --banner-overlay: rgba(0,0,0,0.5); /* overlay semitransparente escuro */
+}
+
+:root[data-theme="light"] {
+  /* Paleta clara com mais contraste */
+  --bg-color: #e9edf3;              /* fundo mais escuro que branco puro */
+  --text-color: #0f141c;            /* texto bem escuro para contraste */
+  --text-secondary: #2b313c;        /* secundário mais contrastado */
+  --border-color: #b8c0cc;          /* borda visível */
+  --header-footer-bg: #f3f5f8;      /* header/footer com leve contraste */
+  --card-bg: #ffffff;               /* cards brancos para destacar do fundo */
+  --logo-accent: #e50914;           /* cor da logo */
+
+  /* Botões do card (idênticos ao tema escuro) */
+  --card-button-bg: #000000;
+  --card-button-text: #ffffff;
+  --card-button-hover-bg: #ffffff;
+  --card-button-hover-text: #000000;
+
+  /* Botão do banner (idênticos ao tema escuro) */
+  --banner-button-bg: #000000;
+  --banner-button-text: #ffffff;
+  --banner-button-hover-bg: #ffffff;
+  --banner-button-hover-text: #000000;
+
+  /* Navegação */
+  --nav-link-color: #0f141c;
+  --nav-link-hover: #e50914;
+
+  /* Carrinho */
+  --carrinho-bg: #ffffff;
+  --carrinho-text: #0f141c;
+  --carrinho-hover-bg: #0f141c;
+  --carrinho-hover-text: #ffffff;
+
+  /* Banner overlay mais forte para legibilidade no claro */
+  --banner-overlay: rgba(0,0,0,0.2);
+}
+
+/* Fonte e Reset */
+body {
+  margin: 0;
+  padding-top: 70px;
+  font-family: 'Oswald', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-color);
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+/* Botões gerais */
+button {
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+button:hover {
+  background-color: var(--button-hover-bg);
+  color: var(--button-hover-text);
+}
+
+/* Botões do card */
+.card button {
+  background: linear-gradient(135deg, #000000 0%, #444444 100%);
+  color: #ffffff;
+  padding: 0.75rem 1.2rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+}
+.card button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+  filter: brightness(1.05);
+  background: linear-gradient(135deg, #111111 0%, #555555 100%);
+}
+
+/* Botões do card no tema claro */
+:root[data-theme="light"] .card button {
+  background: linear-gradient(135deg, #000000 0%, #444444 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+}
+
+:root[data-theme="light"] .card button:hover {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+  background: linear-gradient(135deg, #111111 0%, #555555 100%);
+}
+
+/* Botão do banner */
+.btn-banner {
+  background-color: transparent;
+  color: var(--banner-button-text);
+  padding: 0.85rem 1.6rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  transition: all 0.25s ease;
+  position: relative;
+  z-index: 2;
+  border: 2px solid var(--logo-accent);
+  box-shadow: 0 6px 14px rgba(44, 62, 80, 0.25);
+}
+
+.btn-banner:hover {
+  background-color: var(--logo-accent);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(44, 62, 80, 0.35);
+}
+
+/* Header */
+header {
+   position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem; 
+  height: 70px;
+  background: var(--header-footer-bg);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border-color);
+}
+header .logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-left: 0;
+  flex-shrink: 0;
+}
+header .logo span {
+  color: var(--logo-accent);
+}
+
+#theme-toggle {
+  position: fixed;
+  top: 90px;          /* move para o topo para não colidir com o footer */
+  left: 20px;         /* posicionado à esquerda em vez da direita */
+  background-color: var(--header-footer-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  padding: 0.8rem 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+#theme-toggle:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Navegação */
+nav a {
+  margin: 0 1rem;
+  text-decoration: none;
+  color: var(--nav-link-color);
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+nav a:hover {
+  color: var(--logo-accent);
+}
+
+/* Carrinho */
+#carrinho {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #000000 0%, #444444 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+#carrinho:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(135deg, #111111 0%, #555555 100%);
+}
+
+#carrinho::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-100%) rotate(45deg);
+  transition: transform 0.6s ease;
+}
+
+#carrinho:hover::before {
+  transform: translateX(100%) rotate(45deg);
+}
+
+/* Banner */
+.banner {
+  position: relative;
+  height: 70vh;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+}
+.banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--banner-overlay);
+  z-index: 1;
+}
+/* Slides inside banner */
+.banner .slides {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.banner .slides img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+.banner .slides img.active {
+  opacity: 1;
+}
+.banner h1 {
+  font-size: 3rem;
+  background: var(--banner-text-bg, rgba(0,0,0,0.6));
+  padding: 0.5rem 1rem;
+  position: relative;
+  z-index: 2;
+  color: #ffffff; /* Garantindo que o texto seja branco em ambos os temas */
+}
+.banner p {
+  font-size: 1.5rem;
+  margin: 0.5rem 0;
+  position: relative;
+  z-index: 2;
+  color: #ffffff; /* Garantindo que o texto seja branco em ambos os temas */
+}
+
+/* Produtos */
+.produtos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+:root[data-theme="light"] .card {
+  box-shadow: 0 2px 8px rgba(17, 17, 17, 0.06);
+}
+.card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 16px 28px rgba(0,0,0,0.28);
+  border-color: var(--logo-accent);
+}
+.card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover; 
+  background: transparent;
+  border-radius: 8px;
+}
+.card h3 {
+  margin: 0.3rem 0 0.2rem 0; 
+  font-size: 1rem;
+  text-align: center;
+}
+.card p {
+  margin: 0 0 0.6rem 0; /* reduz espaço entre preço e botão */
+  font-weight: bold;
+  font-size: 0.95rem;
+  text-align: center;
+}
+.card button {
+  background: linear-gradient(135deg, #000000 0%, #444444 100%);
+  color: #ffffff;
+  padding: 0.65rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+  margin-top: 1rem;       
+  align-self: center;     
+  width: 90%;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1rem 2rem;
+  background: var(--header-footer-bg);
+  color: var(--footer-text-color, var(--text-secondary));
+  font-size: 0.9rem;
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Notificação Carrinho */
+.notificacao {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  background: var(--card-button-bg);
+  color: var(--card-button-text);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 9999;
+}
+.notificacao.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Menu Mobile */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+   color: var(--nav-link-color);
+  cursor: pointer;
+}
+.nav-desktop {
+  display: flex;
+  gap: 2rem;
+  margin: 0 auto;
+}
+.nav-mobile {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 70px;
+  left: 0;
+  width: 100%;
+  background: var(--header-footer-bg);
+  color: var(--nav-link-color);
+  padding: 1rem 0;
+  gap: 1rem;
+  z-index: 999;
+}
+
+.nav-mobile.ativo {
+  display: flex;
+  background: var(--header-footer-bg);
+  color: var(--nav-link-color);
+}
+
+.nav-mobile a {
+  margin: 0.5rem 2rem;
+  color: var(--nav-link-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.nav-mobile a:hover {
+  color: var(--nav-link-hover);
+}
+
+/* Main fade transition and sizing */
+main {
+  flex: 1;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+main.is-fading {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+/* Utility */
+.is-hidden { display: none !important; }
+
+@media (max-width: 768px) {
+  .nav-desktop { display: none; }
+  .menu-toggle { display: block; }
+  #carrinho { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+  .banner { height: 50vh; }
+  .banner h1 { font-size: 2rem; }
+  .banner p { font-size: 1rem; }
+  .produtos { grid-template-columns: 1fr; }
+}
