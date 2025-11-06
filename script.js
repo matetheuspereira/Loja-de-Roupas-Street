@@ -456,46 +456,53 @@ document.addEventListener("DOMContentLoaded", () => {
         const t = ev.target; if (t instanceof Element && t.closest('[data-back-to-cart]')) { ev.preventDefault(); renderCartDrawer(); }
       });
     }
-    function renderCheckoutPayment() {
-      if (!content) return;
-      // captura dados do formulário anterior (se ainda existir no DOM)
-      const nome = document.getElementById('nome')?.value || '';
-      const telefone = document.getElementById('telefone')?.value || '';
-      const email = document.getElementById('email')?.value || '';
-      const checkoutInfo = { nome, telefone, email };
-      content.innerHTML = `
-        <div class="pay-tabs">
-          <button class="pay-tab active" data-pay-tab="pix">PIX</button>
-          <button class="pay-tab" data-pay-tab="card">Cartão</button>
-        </div>
-        <div class="pay-panel" id="pay-panel">
-          <p><strong>PIX</strong></p>
-          <div id="pix-area" style="display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;">
-            <button id="gen-pix" class="btn-primary" style="width:auto;">Gerar QR Code PIX</button>
-            <img id="pix-qr" alt="QR Code PIX" style="display:none;width:180px;height:180px;border-radius:8px;" />
-            <textarea id="pix-copy" readonly style="display:none;width:100%;height:80px;border-radius:8px;padding:8px;background:transparent;color:var(--text-color);border:1px solid var(--border-color);"></textarea>
-            <button id="copy-pix" class="btn-secondary" style="display:none;width:auto;">Copiar código PIX</button>
-          </div>
-        </div>
-        <div class="checkout-actions">
-          <button type="button" class="btn-secondary" data-back-to-info>Voltar</button>
-          <button type="button" class="btn-primary" data-finish>Finalizar</button>
+   function renderCheckoutPayment() {
+  if (!content) return;
+
+  const nome = document.getElementById('nome')?.value || '';
+  const telefone = document.getElementById('telefone')?.value || '';
+  const email = document.getElementById('email')?.value || '';
+  const checkoutInfo = { nome, telefone, email };
+
+  content.innerHTML = `
+    <div class="pay-tabs">
+      <button class="pay-tab active" data-pay-tab="pix">PIX</button>
+      <button class="pay-tab" data-pay-tab="card">Cartão</button>
+    </div>
+    <div class="pay-panel" id="pay-panel">
+      <p><strong>PIX</strong></p>
+      <div id="pix-area" style="display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;">
+        <button id="gen-pix" class="btn-primary" style="width:auto;">Gerar QR Code PIX</button>
+        <img id="pix-qr" alt="QR Code PIX" style="display:none;width:180px;height:180px;border-radius:8px;" />
+        <textarea id="pix-copy" readonly style="display:none;width:100%;height:80px;border-radius:8px;padding:8px;background:transparent;color:var(--text-color);border:1px solid var(--border-color);"></textarea>
+        <button id="copy-pix" class="btn-secondary" style="display:none;width:auto;">Copiar código PIX</button>
+      </div>
+    </div>
+    <div class="checkout-actions">
+      <button type="button" class="btn-secondary" data-back-to-info>Voltar</button>
+      <button type="button" class="btn-primary" data-finish>Finalizar</button>
+    </div>`;
+
+  const pixHTML = content.querySelector('#pay-panel').innerHTML;
+
+  function setTab(tab) {
+    content.querySelectorAll('.pay-tab').forEach(b =>
+      b.classList.toggle('active', b.dataset.payTab === tab)
+    );
+
+    const panel = content.querySelector('#pay-panel');
+    if (tab === 'pix') {
+      panel.innerHTML = pixHTML;
+    } else {
+      panel.innerHTML = `<p><strong>Cartão</strong></p>
+        <div class="checkout-form">
+          <div class="field"><label>Número do cartão</label><input inputmode="numeric" placeholder="0000 0000 0000 0000"></div>
+          <div class="field"><label>Nome impresso</label><input></div>
+          <div class="field"><label>Validade (MM/AA)</label><input placeholder="MM/AA"></div>
+          <div class="field"><label>CVV</label><input inputmode="numeric" placeholder="123"></div>
         </div>`;
-      function setTab(tab) {
-        content.querySelectorAll('.pay-tab').forEach(b => b.classList.toggle('active', b.dataset.payTab === tab));
-        const panel = content.querySelector('#pay-panel');
-        if (tab === 'pix') {
-          panel.innerHTML = document.getElementById('pay-panel').innerHTML; // mantém a UI do PIX
-        } else {
-          panel.innerHTML = `<p><strong>Cartão</strong></p>
-            <div class="checkout-form">
-              <div class="field"><label>Número do cartão</label><input inputmode="numeric" placeholder="0000 0000 0000 0000"></div>
-              <div class="field"><label>Nome impresso</label><input></div>
-              <div class="field"><label>Validade (MM/AA)</label><input placeholder="MM/AA"></div>
-              <div class="field"><label>CVV</label><input inputmode="numeric" placeholder="123"></div>
-            </div>`;
-        }
-      }
+    }
+  }
       content.addEventListener('click', (ev) => {
         const t = ev.target; if (!(t instanceof Element)) return;
         if (t.closest('[data-pay-tab]')) setTab(t.closest('[data-pay-tab]').dataset.payTab);
