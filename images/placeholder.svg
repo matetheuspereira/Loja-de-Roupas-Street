@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1f1f1f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3c3c3c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#grad)" />
+  <g fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.45">
+    <path d="M120 420l120-150 110 130 70-90 70 110" />
+    <circle cx="210" cy="210" r="45" />
+    <rect x="90" y="140" width="420" height="320" rx="24" ry="24" />
+  </g>
+  <text x="50%" y="90%" fill="#f1f1f1" font-family="Oswald, Arial, sans-serif" font-size="34" text-anchor="middle">
+    Imagem indisponivel
+  </text>
+</svg>
+

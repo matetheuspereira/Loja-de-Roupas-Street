@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Loja Street</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-page">
+  <header class="admin-header">
+    <div class="logo">Minha<span>Loja</span> <small>Admin</small></div>
+    <div class="admin-header__actions">
+      <button id="admin-logout" class="btn-secondary is-hidden">Sair</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div id="admin-alert" class="admin-alert" role="status" aria-live="polite"></div>
+
+    <section id="admin-login" class="admin-card">
+      <h2>Acesso restrito</h2>
+      <p>Entre com as credenciais de administrador para gerenciar o catálogo.</p>
+      <form id="admin-login-form" class="admin-form">
+        <label>
+          E-mail
+          <input type="email" name="email" required placeholder="admin@lojastreet.com">
+        </label>
+        <label>
+          Senha
+          <input type="password" name="password" required placeholder="********">
+        </label>
+        <button type="submit" class="btn-primary">Entrar</button>
+      </form>
+    </section>
+
+    <section id="admin-dashboard" class="admin-card is-hidden">
+      <div class="admin-card__header">
+        <div>
+          <h2>Catálogo de produtos</h2>
+          <p>Cadastre novos itens e gerencie ofertas em tempo real.</p>
+        </div>
+        <button type="button" id="product-reset-btn" class="btn-tertiary">Nova entrada</button>
+      </div>
+
+      <form id="product-form" class="admin-form admin-form--grid">
+        <input type="hidden" name="id" />
+        <label class="admin-field">
+          Nome do produto
+          <input type="text" name="name" required placeholder="Jaqueta corta vento">
+        </label>
+        <label class="admin-field admin-field--wide">
+          Descrição
+          <textarea name="description" rows="2" placeholder="Detalhes rápidos do item"></textarea>
+        </label>
+        <label class="admin-field">
+          Categoria
+          <select name="category" required>
+            <option value="">Selecione</option>
+            <option value="feminino">Feminino</option>
+            <option value="masculino">Masculino</option>
+            <option value="acessorios">Acessórios</option>
+            <option value="unissex">Unissex</option>
+          </select>
+        </label>
+        <label class="admin-field">
+          Preço base (R$)
+          <input type="number" name="price" step="0.01" min="0" required placeholder="199.90">
+        </label>
+        <label class="admin-field">
+          Preço promocional (opcional)
+          <input type="number" name="discountPrice" step="0.01" min="0" placeholder="149.90">
+        </label>
+        <label class="admin-field admin-field--wide">
+          URL da imagem
+          <input type="text" name="imageUrl" placeholder="images/promo-hoodie.jpg">
+        </label>
+        <label class="admin-field admin-field--wide">
+          Upload da imagem
+          <input type="file" name="imageFile" accept="image/*">
+          <span class="admin-hint">Opcional: selecione um arquivo ou informe a URL acima.</span>
+        </label>
+        <div class="admin-form__inline admin-form__full">
+          <label class="admin-checkbox">
+            <input type="checkbox" name="featured">
+            <span>Destaque na vitrine</span>
+          </label>
+          <label class="admin-checkbox">
+            <input type="checkbox" name="isActive" checked>
+            <span>Produto ativo</span>
+          </label>
+        </div>
+        <button type="submit" class="btn-primary admin-form__full">Salvar produto</button>
+      </form>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Categoria</th>
+              <th>Preço</th>
+              <th>Promo</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="products-table-body">
+            <tr>
+              <td colspan="6" class="admin-table__empty">Carregando lista...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
+

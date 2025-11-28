@@ -6,6 +6,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Only enable SPA on http/https, not on file:// to avoid fetch CORS issues
   const isHttpEnv = /^https?:$/.test(window.location.protocol);
+  const API_HEALTH_TIMEOUT = 3000;
+  const apiCandidates = Array.from(
+    new Set(
+      [
+        window.__API_BASE__,
+        document.querySelector('meta[name="api-base"]')?.content,
+        window.location.origin && window.location.origin !== 'null' ? window.location.origin : null,
+        'http://localhost:3001',
+        'http://127.0.0.1:3001'
+      ]
+        .filter(Boolean)
+        .map((candidate) => {
+          const trimmed = candidate.trim().replace(/\/+$/, '');
+          return /\/api$/i.test(trimmed) ? trimmed.replace(/\/api$/i, '') : trimmed;
+        })
+        .filter(Boolean)
+    )
+  );
+  let apiBaseCache;
+  let apiBasePromise = null;
+
+  async function resolveApiBase() {
+    if (typeof apiBaseCache === 'string' && apiBaseCache.length > 0) {
+      return apiBaseCache;
+    }
+    if (apiBasePromise) return apiBasePromise;
+
+    apiBasePromise = (async () => {
+      for (const candidate of apiCandidates) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), API_HEALTH_TIMEOUT);
+          const resp = await fetch(`${candidate}/api/health`, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          if (resp.ok) {
+            apiBaseCache = candidate;
+            return candidate;
+          }
+        } catch (err) {
+          console.warn('[API] Falha ao testar', candidate, err?.message);
+        }
+      }
+      apiBaseCache = null;
+      return null;
+    })();
+
+    try {
+      return await apiBasePromise;
+    } finally {
+      apiBasePromise = null;
+    }
+  }
 
   function showNotification(message) {
     if (!notificacao) return;
@@ -197,7 +249,87 @@ document.addEventListener("DOMContentLoaded", () => {
       }, { once: true });
     });
   }
+  function showProductsMessage(container, message) {
+    if (!container) return;
+    container.innerHTML = `<div class="produtos__empty">${message}</div>`;
+  }
+
+  function renderProducts(container, products) {
+    if (!container) return;
+    container.innerHTML = '';
+    if (!products || products.length === 0) {
+      showProductsMessage(container, 'Nenhum produto disponível no momento.');
+      return;
+    }
+    const fragment = document.createDocumentFragment();
+    products.forEach((product) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.productId = product.id;
+      const priceBlock = product.discountPrice
+        ? `<p><s>${moneyBRL(product.price)}</s> ${moneyBRL(product.finalPrice)}</p>`
+        : `<p>${moneyBRL(product.finalPrice)}</p>`;
+      card.innerHTML = `
+        <img src="${product.imageUrl}" alt="${product.name}">
+        <h3>${product.name}</h3>
+        ${priceBlock}
+        <button>Adicionar ao Carrinho</button>
+      `;
+      fragment.appendChild(card);
+    });
+    container.appendChild(fragment);
+    attachImageFallback(container);
+  }
+
+  async function loadProductsForSection(container) {
+    if (!container) return;
+    const loadingText =
+      container.dataset.loadingText ||
+      container.querySelector('.produtos__placeholder')?.textContent?.trim() ||
+      'Carregando produtos...';
+    container.innerHTML = `<div class="produtos__placeholder">${loadingText}</div>`;
+    container.dataset.loading = 'true';
+    try {
+      const base = await resolveApiBase();
+      if (!base) {
+        showProductsMessage(container, 'Backend indisponível. Execute o servidor (npm start).');
+        return;
+      }
+      const params = new URLSearchParams();
+      const mode = (container.dataset.products || 'all').toLowerCase();
+      if (mode === 'category') {
+        const category = (container.dataset.category || '').toLowerCase();
+        if (category) params.set('category', category);
+      } else if (mode === 'discount') {
+        params.set('discounted', 'true');
+      } else if (mode === 'featured') {
+        params.set('featured', 'true');
+      }
+      if (container.dataset.limit) {
+        params.set('limit', container.dataset.limit);
+      }
+      const query = params.toString();
+      const url = query ? `${base}/api/products?${query}` : `${base}/api/products`;
+      const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!resp.ok) throw new Error('Falha ao buscar produtos');
+      const data = await resp.json();
+      renderProducts(container, data?.products || []);
+    } catch (error) {
+      console.error('[Produtos] Erro ao carregar catálogo:', error);
+      showProductsMessage(container, 'Não foi possível carregar os produtos agora.');
+    } finally {
+      delete container.dataset.loading;
+    }
+  }
+
+  function hydrateProducts(scope = document) {
+    const sections = Array.from(scope.querySelectorAll('[data-products]'));
+    if (!sections.length) return;
+    sections.forEach((section) => loadProductsForSection(section));
+  }
+
   attachImageFallback();
+  hydrateProducts();
 
   // Banner carousel
   let carouselTimer = null;
@@ -399,6 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await new Promise((r) => requestAnimationFrame(r));
         currentMain.innerHTML = newMain.innerHTML;
         attachImageFallback(currentMain);
+        hydrateProducts(currentMain);
         if (doc.title) document.title = doc.title;
         toggleBannerForUrl(url);
         if (replace) {
@@ -518,32 +651,7 @@ document.addEventListener("DOMContentLoaded", () => {
             genBtn.disabled = true;
             genBtn.textContent = 'Verificando conexão...';
             
-            // Primeiro, verificar se o backend está rodando (tenta localhost e 127.0.0.1)
-            const baseUrls = ['http://localhost:3001', 'http://127.0.0.1:3001'];
-            let backendUrl = null;
-            
-            for (const baseUrl of baseUrls) {
-              const healthUrl = `${baseUrl}/api/health`;
-              console.log('[Frontend] Tentando conectar em:', healthUrl);
-              
-              try {
-                const healthResp = await fetch(healthUrl, { 
-                  method: 'GET',
-                  signal: AbortSignal.timeout(3000) // 3 segundos para health check
-                });
-                
-                if (healthResp.ok) {
-                  const healthData = await healthResp.json();
-                  console.log('[Frontend] Backend está OK em:', baseUrl, healthData);
-                  backendUrl = baseUrl;
-                  break;
-                }
-              } catch (healthErr) {
-                console.log('[Frontend] Falhou ao conectar em:', baseUrl, healthErr.message);
-                continue;
-              }
-            }
-            
+            const backendUrl = await resolveApiBase();
             if (!backendUrl) {
               console.error('[Frontend] Backend não está acessível em nenhuma URL');
               showNotification('❌ Backend não está acessível! Verifique: 1) Backend rodando (npm start) 2) Porta 3001 não bloqueada 3) Firewall');
