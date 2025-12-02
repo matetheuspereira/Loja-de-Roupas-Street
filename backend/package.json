@@ -16,6 +16,7 @@
     "jsonwebtoken": "^9.0.2",
     "mercadopago": "^2.1.0",
     "multer": "^2.0.2",
+    "mysql2": "^3.15.3",
     "resend": "^3.3.0",
     "zod": "^4.1.13"
   }

@@ -16,13 +16,13 @@ import { db, initDatabase, mapProductRow } from './db.js';
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-initDatabase();
+await initDatabase();
 
-// Configurar CORS com headers explícitos
+// Configurar CORS com headers e métodos usados pelo admin (inclui Authorization)
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false
 }));
 
@@ -108,7 +108,7 @@ function getAdminFromRequest(req) {
 
 function buildProductListQuery(query) {
   const whereClauses = [];
-  const params = {};
+  const params = [];
 
   const includeInactive = query.includeInactive === 'true';
   if (!includeInactive) {
@@ -116,8 +116,15 @@ function buildProductListQuery(query) {
   }
 
   if (query.category) {
-    whereClauses.push('category = @category');
-    params.category = query.category.toLowerCase();
+    const cat = query.category.toLowerCase();
+    // feminino/masculino também enxergam produtos unissex
+    if (cat === 'feminino' || cat === 'masculino') {
+      whereClauses.push('(category = ? OR category = "unissex")');
+      params.push(cat);
+    } else {
+      whereClauses.push('category = ?');
+      params.push(cat);
+    }
   }
 
   if (query.discounted === 'true') {
@@ -135,9 +142,18 @@ function buildProductListQuery(query) {
   sql += ' ORDER BY featured DESC, updated_at DESC';
 
   const limit = Number.parseInt(query.limit, 10);
+  let finalLimit;
   if (!Number.isNaN(limit) && limit > 0) {
-    sql += ' LIMIT @limit';
-    params.limit = Math.min(limit, 100);
+    finalLimit = Math.min(limit, 100);
+    sql += ' LIMIT ?';
+    params.push(finalLimit);
+
+    const page = Number.parseInt(query.page, 10);
+    if (!Number.isNaN(page) && page > 1) {
+      const offset = (page - 1) * finalLimit;
+      sql += ' OFFSET ?';
+      params.push(offset);
+    }
   }
 
   return { sql, params };
@@ -180,7 +196,9 @@ app.post('/api/admin/login', async (req, res) => {
       return res.status(400).json({ error: 'Dados inválidos' });
     }
     const { email, password } = payload.data;
-    const admin = db.prepare('SELECT * FROM admin_users WHERE email = ?').get(email.toLowerCase());
+    const admin = await db.get('SELECT * FROM admin_users WHERE email = ?', [
+      email.toLowerCase()
+    ]);
     if (!admin) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
@@ -198,7 +216,7 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
-app.get('/api/products', (req, res) => {
+app.get('/api/products', async (req, res) => {
   try {
     const admin = getAdminFromRequest(req);
     const incomingQuery = { ...(req.query || {}) };
@@ -206,7 +224,7 @@ app.get('/api/products', (req, res) => {
       incomingQuery.includeInactive = 'false';
     }
     const { sql, params } = buildProductListQuery(incomingQuery);
-    const rows = db.prepare(sql).all(params);
+    const rows = await db.all(sql, params);
     res.json({ products: rows.map(mapProductRow) });
   } catch (err) {
     console.error('[Products] Erro ao listar:', err);
@@ -214,7 +232,7 @@ app.get('/api/products', (req, res) => {
   }
 });
 
-app.post('/api/products', authenticateAdmin, (req, res) => {
+app.post('/api/products', authenticateAdmin, async (req, res) => {
   const parsed = productSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Dados inválidos', details: parsed.error.flatten() });
@@ -225,39 +243,45 @@ app.post('/api/products', authenticateAdmin, (req, res) => {
     return res.status(400).json({ error: 'Preço promocional deve ser menor que o preço original' });
   }
 
-  const insert = db.prepare(`
-    INSERT INTO products (name, description, price, image_url, category, featured, is_active, discount_price, discount_percent, updated_at)
-    VALUES (@name, @description, @price, @image_url, @category, @featured, @is_active, @discount_price, @discount_percent, CURRENT_TIMESTAMP)
-  `);
-
   const discountPercent = product.discountPrice
     ? Math.round((1 - product.discountPrice / product.price) * 100)
     : null;
 
-  const result = insert.run({
-    name: product.name,
-    description: product.description || '',
-    price: product.price,
-    image_url: product.imageUrl,
-    category: product.category.toLowerCase(),
-    featured: product.featured ? 1 : 0,
-    is_active: product.isActive === false ? 0 : 1,
-    discount_price: product.discountPrice ?? null,
-    discount_percent: discountPercent
-  });
+  try {
+    const [result] = await db.query(
+      `INSERT INTO products 
+        (name, description, price, image_url, category, featured, is_active, discount_price, discount_percent) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        product.name,
+        product.description || '',
+        product.price,
+        product.imageUrl,
+        product.category.toLowerCase(),
+        product.featured ? 1 : 0,
+        product.isActive === false ? 0 : 1,
+        product.discountPrice ?? null,
+        discountPercent
+      ]
+    );
 
-  const created = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json({ product: mapProductRow(created) });
+    const createdId = result.insertId;
+    const created = await db.get('SELECT * FROM products WHERE id = ?', [createdId]);
+    res.status(201).json({ product: mapProductRow(created) });
+  } catch (err) {
+    console.error('[Products] Erro ao criar:', err);
+    res.status(500).json({ error: 'Falha ao salvar produto' });
+  }
 });
 
-app.put('/api/products/:id', authenticateAdmin, (req, res) => {
+app.put('/api/products/:id', authenticateAdmin, async (req, res) => {
   const parsed = productSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Dados inválidos', details: parsed.error.flatten() });
   }
   const product = parsed.data;
 
-  const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+  const existing = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!existing) {
     return res.status(404).json({ error: 'Produto não encontrado' });
   }
@@ -270,35 +294,41 @@ app.put('/api/products/:id', authenticateAdmin, (req, res) => {
     ? Math.round((1 - product.discountPrice / product.price) * 100)
     : null;
 
-  db.prepare(
-    `UPDATE products 
-     SET name=@name, description=@description, price=@price, image_url=@image_url, category=@category, 
-         featured=@featured, is_active=@is_active, discount_price=@discount_price, discount_percent=@discount_percent,
-         updated_at=CURRENT_TIMESTAMP
-     WHERE id=@id`
-  ).run({
-    id: req.params.id,
-    name: product.name,
-    description: product.description || '',
-    price: product.price,
-    image_url: product.imageUrl,
-    category: product.category.toLowerCase(),
-    featured: product.featured ? 1 : 0,
-    is_active: product.isActive === false ? 0 : 1,
-    discount_price: product.discountPrice ?? null,
-    discount_percent: discountPercent
-  });
+  try {
+    await db.query(
+      `UPDATE products 
+       SET name = ?, description = ?, price = ?, image_url = ?, category = ?, 
+           featured = ?, is_active = ?, discount_price = ?, discount_percent = ?
+       WHERE id = ?`,
+      [
+        product.name,
+        product.description || '',
+        product.price,
+        product.imageUrl,
+        product.category.toLowerCase(),
+        product.featured ? 1 : 0,
+        product.isActive === false ? 0 : 1,
+        product.discountPrice ?? null,
+        discountPercent,
+        req.params.id
+      ]
+    );
 
-  const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
-  res.json({ product: mapProductRow(updated) });
+    const updated = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    res.json({ product: mapProductRow(updated) });
+  } catch (err) {
+    console.error('[Products] Erro ao atualizar:', err);
+    res.status(500).json({ error: 'Falha ao atualizar produto' });
+  }
 });
 
-app.patch('/api/products/:id/discount', authenticateAdmin, (req, res) => {
+app.patch('/api/products/:id/discount', authenticateAdmin, async (req, res) => {
   const parsed = discountSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Informe um valor válido' });
   }
-  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+
+  const product = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!product) {
     return res.status(404).json({ error: 'Produto não encontrado' });
   }
@@ -310,39 +340,52 @@ app.patch('/api/products/:id/discount', authenticateAdmin, (req, res) => {
   const discountPercent =
     discountPrice !== null ? Math.round((1 - discountPrice / product.price) * 100) : null;
 
-  db.prepare(
-    `UPDATE products 
-     SET discount_price=@discount_price, discount_percent=@discount_percent, updated_at=CURRENT_TIMESTAMP 
-     WHERE id=@id`
-  ).run({
-    id: req.params.id,
-    discount_price: discountPrice,
-    discount_percent: discountPercent
-  });
+  try {
+    await db.query(
+      `UPDATE products 
+       SET discount_price = ?, discount_percent = ? 
+       WHERE id = ?`,
+      [discountPrice, discountPercent, req.params.id]
+    );
 
-  const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
-  res.json({ product: mapProductRow(updated) });
+    const updated = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    res.json({ product: mapProductRow(updated) });
+  } catch (err) {
+    console.error('[Products] Erro ao atualizar desconto:', err);
+    res.status(500).json({ error: 'Falha ao atualizar desconto' });
+  }
 });
 
-app.patch('/api/products/:id/toggle', authenticateAdmin, (req, res) => {
-  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+app.patch('/api/products/:id/toggle', authenticateAdmin, async (req, res) => {
+  const product = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!product) {
     return res.status(404).json({ error: 'Produto não encontrado' });
   }
-  db.prepare(
-    'UPDATE products SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END, updated_at=CURRENT_TIMESTAMP WHERE id = ?'
-  ).run(req.params.id);
-  const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
-  res.json({ product: mapProductRow(updated) });
+  try {
+    await db.query(
+      'UPDATE products SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END WHERE id = ?',
+      [req.params.id]
+    );
+    const updated = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    res.json({ product: mapProductRow(updated) });
+  } catch (err) {
+    console.error('[Products] Erro ao alternar status:', err);
+    res.status(500).json({ error: 'Falha ao alterar status do produto' });
+  }
 });
 
-app.delete('/api/products/:id', authenticateAdmin, (req, res) => {
-  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+app.delete('/api/products/:id', authenticateAdmin, async (req, res) => {
+  const product = await db.get('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!product) {
     return res.status(404).json({ error: 'Produto não encontrado' });
   }
-  db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
-  res.status(204).send();
+  try {
+    await db.query('DELETE FROM products WHERE id = ?', [req.params.id]);
+    res.status(204).send();
+  } catch (err) {
+    console.error('[Products] Erro ao excluir:', err);
+    res.status(500).json({ error: 'Falha ao excluir produto' });
+  }
 });
 
 app.post('/api/uploads/image', authenticateAdmin, upload.single('image'), (req, res) => {
