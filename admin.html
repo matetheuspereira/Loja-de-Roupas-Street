@@ -72,13 +72,9 @@
           <input type="number" name="discountPrice" step="0.01" min="0" placeholder="149.90">
         </label>
         <label class="admin-field admin-field--wide">
-          URL da imagem
-          <input type="text" name="imageUrl" placeholder="images/promo-hoodie.jpg">
-        </label>
-        <label class="admin-field admin-field--wide">
           Upload da imagem
-          <input type="file" name="imageFile" accept="image/*">
-          <span class="admin-hint">Opcional: selecione um arquivo ou informe a URL acima.</span>
+          <input type="file" name="imageFile" accept="image/*" required>
+          <span class="admin-hint">Selecione o arquivo de imagem do produto (obrigatório).</span>
         </label>
         <div class="admin-form__inline admin-form__full">
           <label class="admin-checkbox">

@@ -281,6 +281,31 @@ document.addEventListener("DOMContentLoaded", () => {
     attachImageFallback(container);
   }
 
+  function updatePager(container, products, page, limit) {
+    if (!container || !container.id) return;
+    const pager = document.querySelector(`[data-pager-for="${container.id}"]`);
+    if (!pager) return;
+
+    const prevBtn = pager.querySelector('.pager-prev');
+    const nextBtn = pager.querySelector('.pager-next');
+    const labelEl = pager.querySelector('[data-page-label]');
+
+    if (labelEl) {
+      labelEl.textContent = `Página ${page}`;
+    }
+
+    if (prevBtn) {
+      prevBtn.disabled = page <= 1;
+    }
+
+    if (nextBtn) {
+      // Se recebemos menos itens do que o limite, não há próxima página
+      const hasLimit = typeof limit === 'number' && limit > 0;
+      const hasMore = hasLimit ? products.length === limit : products.length > 0;
+      nextBtn.disabled = !hasMore;
+    }
+  }
+
   async function loadProductsForSection(container) {
     if (!container) return;
     const loadingText =
@@ -296,6 +321,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       const params = new URLSearchParams();
+      const page = parseInt(container.dataset.page || '1', 10) || 1;
+      const hasLimit = container.dataset.limit && !Number.isNaN(parseInt(container.dataset.limit, 10));
+      const limit = hasLimit ? parseInt(container.dataset.limit, 10) : undefined;
       const mode = (container.dataset.products || 'all').toLowerCase();
       if (mode === 'category') {
         const category = (container.dataset.category || '').toLowerCase();
@@ -305,15 +333,23 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (mode === 'featured') {
         params.set('featured', 'true');
       }
-      if (container.dataset.limit) {
-        params.set('limit', container.dataset.limit);
+      if (limit) {
+        params.set('limit', String(limit));
+      }
+      if (page > 1) {
+        params.set('page', String(page));
       }
       const query = params.toString();
       const url = query ? `${base}/api/products?${query}` : `${base}/api/products`;
       const resp = await fetch(url, { headers: { Accept: 'application/json' } });
       if (!resp.ok) throw new Error('Falha ao buscar produtos');
       const data = await resp.json();
-      renderProducts(container, data?.products || []);
+      const products = data?.products || [];
+      renderProducts(container, products);
+
+      if (container.dataset.paginate === 'true') {
+        updatePager(container, products, page, limit);
+      }
     } catch (error) {
       console.error('[Produtos] Erro ao carregar catálogo:', error);
       showProductsMessage(container, 'Não foi possível carregar os produtos agora.');
@@ -467,6 +503,31 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // (remoção já tratada globalmente)
+    }
+
+    // Paginação do catálogo
+    if (target.closest && target.closest('.pager-btn')) {
+      const btn = target.closest('.pager-btn');
+      const pager = btn.closest('[data-pager-for]');
+      if (!pager) return;
+      const targetId = pager.getAttribute('data-pager-for');
+      const container = targetId ? document.getElementById(targetId) : null;
+      if (!container) return;
+
+      const direction = btn.dataset.direction;
+      const currentPage = parseInt(container.dataset.page || '1', 10) || 1;
+      let nextPage = currentPage;
+      if (direction === 'next') nextPage = currentPage + 1;
+      if (direction === 'prev' && currentPage > 1) nextPage = currentPage - 1;
+
+      if (nextPage === currentPage) return;
+      container.dataset.page = String(nextPage);
+      loadProductsForSection(container);
+      // rola suavemente o catálogo para o topo
+      const rect = container.getBoundingClientRect();
+      const offset = window.scrollY + rect.top - 90; // ajusta pelo header fixo
+      window.scrollTo({ top: offset, behavior: 'smooth' });
+      return;
     }
 
     if (!isHttpEnv) return; // Do not intercept links on file://

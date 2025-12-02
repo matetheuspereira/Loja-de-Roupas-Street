@@ -55,10 +55,17 @@
   </section>
 
   <!-- Produtos (Catálogo Geral dinâmico) -->
-  <main class="produtos" data-products="all" data-limit="12">
+  <main id="catalogo-geral" class="produtos" data-products="all" data-limit="12" data-paginate="true" data-page="1">
     <div class="produtos__placeholder">Carregando catálogo...</div>
     <noscript>Ative o JavaScript para visualizar o catálogo.</noscript>
   </main>
+
+  <!-- Paginação do catálogo geral -->
+  <nav class="produtos__pager" data-pager-for="catalogo-geral" aria-label="Paginação do catálogo">
+    <button type="button" class="pager-btn pager-prev" data-direction="prev" disabled>Anterior</button>
+    <span class="pager-info" data-page-label>Página 1</span>
+    <button type="button" class="pager-btn pager-next" data-direction="next">Próxima</button>
+  </nav>
 
   <!-- Rodapé -->
   <footer>

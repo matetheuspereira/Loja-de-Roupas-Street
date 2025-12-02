@@ -368,6 +368,42 @@ nav a:hover {
   box-sizing: border-box;
 }
 
+/* Paginação do catálogo de produtos */
+.produtos__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0 2rem 2rem;
+}
+
+.pager-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s;
+}
+
+.pager-btn:hover:not(:disabled) {
+  border-color: var(--logo-accent);
+  background-color: var(--logo-accent);
+  color: #ffffff;
+}
+
+.pager-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pager-info {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
 .card {
   background-color: var(--card-bg);
   border-radius: 10px;

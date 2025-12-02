@@ -263,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
     productForm.elements.category.value = product.category || '';
     productForm.elements.price.value = product.price ?? '';
     productForm.elements.discountPrice.value = product.discountPrice ?? '';
-    productForm.elements.imageUrl.value = product.imageUrl || '';
     productForm.elements.featured.checked = Boolean(product.featured);
     productForm.elements.isActive.checked = Boolean(product.isActive);
     showAlert(`Editando: ${product.name}`, 'info');
@@ -308,25 +307,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const imageFile = productForm.elements.imageFile?.files?.[0] || null;
-    let imageUrl = formData.get('imageUrl')?.toString().trim();
 
-    if (imageFile) {
-      try {
-        showAlert('Enviando imagem...', 'info');
-        const uploadedPath = await uploadImageFile(imageFile);
-        imageUrl = uploadedPath || imageUrl;
-      } catch (err) {
-        showAlert(err.message, 'error');
-        return;
-      }
-    }
-
-    if (!imageUrl) {
-      showAlert('Envie uma imagem ou informe uma URL.', 'error');
+    if (!imageFile) {
+      showAlert('Envie uma imagem do produto.', 'error');
       return;
     }
 
-    payload.imageUrl = imageUrl;
+    try {
+      showAlert('Enviando imagem...', 'info');
+      const uploadedPath = await uploadImageFile(imageFile);
+      if (!uploadedPath) {
+        showAlert('Falha ao receber o caminho da imagem enviada.', 'error');
+        return;
+      }
+      payload.imageUrl = uploadedPath;
+    } catch (err) {
+      showAlert(err.message, 'error');
+      return;
+    }
 
     const productId = formData.get('id');
     const method = productId ? 'PUT' : 'POST';
